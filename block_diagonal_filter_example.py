@@ -146,75 +146,75 @@ time_block     = 0 #total time spent advancing the block-diagonal filter
 time_decoupled = 0 #total time spent advancing the "artificially-decoupled" filter
 
 for t in range(N_ITER):
-	## advancing the state of the full system
-	v_bar = np.random.multivariate_normal(np.zeros(COUPLING_DIM), Q_bar) #correlated process noise (coupling input)
-	v = np.random.multivariate_normal(np.zeros(STATE_DIM), Q, N_SYSTEMS).flatten() #uncorrelated process noise
-	x = F_full.dot(x) + v + G.dot(v_bar)
+    ## advancing the state of the full system
+    v_bar = np.random.multivariate_normal(np.zeros(COUPLING_DIM), Q_bar) #correlated process noise (coupling input)
+    v = np.random.multivariate_normal(np.zeros(STATE_DIM), Q, N_SYSTEMS).flatten() #uncorrelated process noise
+    x = F_full.dot(x) + v + G.dot(v_bar)
 
-	## performing measurements
-	w = np.random.multivariate_normal(np.zeros(MEASUREMENT_DIM), R, N_SYSTEMS).flatten() #uncorrelated measurement noise
-	y = H_full.dot(x) + w
+    ## performing measurements
+    w = np.random.multivariate_normal(np.zeros(MEASUREMENT_DIM), R, N_SYSTEMS).flatten() #uncorrelated measurement noise
+    y = H_full.dot(x) + w
 
-	## advancing the (full) Kalman filter
-	start_time = time.time()
-	x_full = F_full.dot(x_full)
-	y_full = H_full.dot(x_full)
-	P_full = F_full.dot(P_full).dot(F_full.T) + Q_full
-	S_full = H_full.dot(P_full).dot(H_full.T) + R_full
-	S_full_inv = np.linalg.inv(S_full)
-	K_full = P_full.dot(H_full.T).dot(S_full_inv)
-	x_full = x_full + K_full.dot(y.reshape(y_full.shape) - y_full)
-	P_full = P_full - K_full.dot(H_full).dot(P_full)
-	time_full += time.time() - start_time
+    ## advancing the (full) Kalman filter
+    start_time = time.time()
+    x_full = F_full.dot(x_full)
+    y_full = H_full.dot(x_full)
+    P_full = F_full.dot(P_full).dot(F_full.T) + Q_full
+    S_full = H_full.dot(P_full).dot(H_full.T) + R_full
+    S_full_inv = np.linalg.inv(S_full)
+    K_full = P_full.dot(H_full.T).dot(S_full_inv)
+    x_full = x_full + K_full.dot(y.reshape(y_full.shape) - y_full)
+    P_full = P_full - K_full.dot(H_full).dot(P_full)
+    time_full += time.time() - start_time
 
-	## advancing the "artificially-decoupled" Filter (same equations as above propagated along of axes 1 and 2)
-	start_time = time.time()
-	F_block_trans = F_block.transpose(0,2,1) #although F and H are constant here, they can be time dependent in general
-	H_block_trans = H_block.transpose(0,2,1)
-	x_decoupled = np.matmul(F_block, x_decoupled)
-	y_decoupled = np.matmul(H_block, x_decoupled)
-	P_decoupled = np.matmul(np.matmul(F_block, P_decoupled), F_block_trans) + Q_decoupled
-	S_decoupled = np.matmul(np.matmul(H_block, P_decoupled), H_block_trans) + R_block
-	S_decoupled_inv = np.linalg.inv(S_decoupled)
-	K_decoupled = np.matmul(np.matmul(P_decoupled, H_block_trans), S_decoupled_inv)
-	x_decoupled = x_decoupled + np.matmul(K_decoupled, y.reshape(y_decoupled.shape) - y_decoupled)
-	P_decoupled = P_decoupled - np.matmul(np.matmul(K_decoupled, H_block), P_decoupled)
-	time_decoupled += time.time() - start_time
+    ## advancing the "artificially-decoupled" Filter (same equations as above propagated along of axes 1 and 2)
+    start_time = time.time()
+    F_block_trans = F_block.transpose(0,2,1) #although F and H are constant here, they can be time dependent in general
+    H_block_trans = H_block.transpose(0,2,1)
+    x_decoupled = np.matmul(F_block, x_decoupled)
+    y_decoupled = np.matmul(H_block, x_decoupled)
+    P_decoupled = np.matmul(np.matmul(F_block, P_decoupled), F_block_trans) + Q_decoupled
+    S_decoupled = np.matmul(np.matmul(H_block, P_decoupled), H_block_trans) + R_block
+    S_decoupled_inv = np.linalg.inv(S_decoupled)
+    K_decoupled = np.matmul(np.matmul(P_decoupled, H_block_trans), S_decoupled_inv)
+    x_decoupled = x_decoupled + np.matmul(K_decoupled, y.reshape(y_decoupled.shape) - y_decoupled)
+    P_decoupled = P_decoupled - np.matmul(np.matmul(K_decoupled, H_block), P_decoupled)
+    time_decoupled += time.time() - start_time
 
-	## advancing the block diagonal Filter (a paper on arXiv will be uploaded soon)
-	start_time = time.time()
-	HG_block = np.matmul(H_block, G_block)
-	HG_block_trans = HG_block.transpose(0,2,1)
+    ## advancing the block diagonal Filter (a paper on arXiv will be uploaded soon)
+    start_time = time.time()
+    HG_block = np.matmul(H_block, G_block)
+    HG_block_trans = HG_block.transpose(0,2,1)
 
-	x_block = np.matmul(F_block, x_block)
-	y_block = np.matmul(H_block, x_block)
+    x_block = np.matmul(F_block, x_block)
+    y_block = np.matmul(H_block, x_block)
 
-	L_block = np.matmul(np.matmul(F_block, P_block), F_block_trans) + Q_block
-	M_block = np.matmul(np.matmul(H_block, L_block), H_block_trans) + R_block
-	M_block_inv = np.linalg.inv(M_block)
-	N_block = np.matmul(np.matmul(HG_block_trans, M_block_inv), HG_block)
-	N = np.sum(N_block, axis=0)
-	C1 = np.linalg.inv(np.linalg.inv(Q_bar) + N)
-	C2 = Q_bar.dot(N.dot(C1).dot(N) - N).dot(Q_bar) + Q_bar
-	C3 = Q_bar.dot(N).dot(C1) - Q_bar
-	LH_block = np.matmul(L_block, H_block_trans)
-	HL_block = np.matmul(H_block, L_block)
-	A_block = L_block - np.matmul(np.matmul(LH_block, M_block_inv), HL_block)
-	B_block = np.matmul(np.matmul(LH_block, M_block_inv), HG_block)
-	B_block_trans = B_block.transpose(0,2,1)
+    L_block = np.matmul(np.matmul(F_block, P_block), F_block_trans) + Q_block
+    M_block = np.matmul(np.matmul(H_block, L_block), H_block_trans) + R_block
+    M_block_inv = np.linalg.inv(M_block)
+    N_block = np.matmul(np.matmul(HG_block_trans, M_block_inv), HG_block)
+    N = np.sum(N_block, axis=0)
+    C1 = np.linalg.inv(np.linalg.inv(Q_bar) + N)
+    C2 = Q_bar.dot(N.dot(C1).dot(N) - N).dot(Q_bar) + Q_bar
+    C3 = Q_bar.dot(N).dot(C1) - Q_bar
+    LH_block = np.matmul(L_block, H_block_trans)
+    HL_block = np.matmul(H_block, L_block)
+    A_block = L_block - np.matmul(np.matmul(LH_block, M_block_inv), HL_block)
+    B_block = np.matmul(np.matmul(LH_block, M_block_inv), HG_block)
+    B_block_trans = B_block.transpose(0,2,1)
 
-	_x_block_update_term_1 = np.matmul(H_block_trans, np.matmul(M_block_inv, y.reshape(y_block.shape) - y_block))
-	_x_block_update_term_2 = np.sum(np.matmul(G_block_trans, _x_block_update_term_1), axis=0)
-	x_block = x_block + np.matmul(L_block, _x_block_update_term_1) - (B_block.dot(C1) + G_block.dot(C3)).dot(_x_block_update_term_2)
-	P_block = A_block + np.matmul(B_block.dot(C1), B_block_trans) + np.matmul(G_block.dot(C2), G_block_trans) + np.matmul(B_block.dot(C3), G_block_trans) + np.matmul(G_block.dot(C3), B_block_trans)
-	time_block += time.time() - start_time
+    _x_block_update_term_1 = np.matmul(H_block_trans, np.matmul(M_block_inv, y.reshape(y_block.shape) - y_block))
+    _x_block_update_term_2 = np.sum(np.matmul(G_block_trans, _x_block_update_term_1), axis=0)
+    x_block = x_block + np.matmul(L_block, _x_block_update_term_1) - (B_block.dot(C1) + G_block.dot(C3)).dot(_x_block_update_term_2)
+    P_block = A_block + np.matmul(B_block.dot(C1), B_block_trans) + np.matmul(G_block.dot(C2), G_block_trans) + np.matmul(B_block.dot(C3), G_block_trans) + np.matmul(G_block.dot(C3), B_block_trans)
+    time_block += time.time() - start_time
 	
-	## keeping track of sums of squares of errors and differences between estimates
-	errors_full[t]              = np.sum((x.reshape(x_full.shape)      - x_full)**2)
-	errors_block[t]             = np.sum((x.reshape(x_block.shape)     - x_block)**2)
-	errors_decoupled[t]         = np.sum((x.reshape(x_decoupled.shape) - x_decoupled)**2)
-	estimates_diff_block[t]     = np.sum((x_full.reshape(x_block.shape)     - x_block)**2)
-	estimates_diff_decoupled[t] = np.sum((x_full.reshape(x_decoupled.shape) - x_decoupled)**2)
+    ## keeping track of sums of squares of errors and differences between estimates
+    errors_full[t]              = np.sum((x.reshape(x_full.shape)      - x_full)**2)
+    errors_block[t]             = np.sum((x.reshape(x_block.shape)     - x_block)**2)
+    errors_decoupled[t]         = np.sum((x.reshape(x_decoupled.shape) - x_decoupled)**2)
+    estimates_diff_block[t]     = np.sum((x_full.reshape(x_block.shape)     - x_block)**2)
+    estimates_diff_decoupled[t] = np.sum((x_full.reshape(x_decoupled.shape) - x_decoupled)**2)
 
 ## printing results
 SETTLING_TIME = N_ITER//2 #the empirical time it takes the filters to "reach" steady-state (become "asymptotic")
