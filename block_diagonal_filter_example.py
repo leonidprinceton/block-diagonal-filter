@@ -29,10 +29,10 @@ import time
 # to the block-diagonal filter (to appear on arXiv soon). It considers N_SYSTEMS identical
 # 2-dimensional linear discrete-time dynamical systems,
 # 
-# x_i_1(t) = alpha*x_i_1(t-1) +     1*x_i_2(t-1) + v_i_1(t) + G_i_1*v_bar(t)
-# x_i_2(t) =                  + alpha*x_i_2(t-1) + v_i_2(t) + G_i_2*v_bar(t)
+# x_i_1(t) = 0.9*x_i_1(t-1) + alpha*x_i_2(t-1) + v_i_1(t) + G_i_1*v_bar(t)
+# x_i_2(t) =                +   0.9*x_i_2(t-1) + v_i_2(t) + G_i_2*v_bar(t)
 #
-# y_i(t)   = x_i_1(t)         +       x_i_2(t)   + w_i(t)
+# y_i(t)   = x_i_1(t)       +       x_i_2(t)   + w_i(t)
 #
 # where:
 # - i is the index of the system
@@ -87,7 +87,7 @@ COUPLING_DIM = 1
 ##
 alpha = 1.0
 beta = 1.0/256
-F = np.array([[alpha, 1], [0, alpha]])
+F = np.array([[0.9, alpha], [0, 0.9]])
 H = np.ones((MEASUREMENT_DIM, STATE_DIM))
 Q = beta*np.eye(STATE_DIM)
 R = np.eye(MEASUREMENT_DIM)
